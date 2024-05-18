@@ -21,8 +21,14 @@ const { fetchCustomer, fetchContracts } = require("./apstleAPI");
 const { addRoles, checkForRoles, removeRoles } = require("./misc");
 const { handleInteractionReply } = require("./handlnteraction");
 
-const { TOKEN, GUILD_ID, SUBSCRIPTION_ROLE_ID, MONGO_URI, SUPPORT_CHANNEL_ID } =
-	process.env;
+const {
+	TOKEN,
+	GUILD_ID,
+	SUBSCRIPTION_ROLE_ID,
+	MONGO_URI,
+	SUPPORT_CHANNEL_ID,
+	OWNER_ID,
+} = process.env;
 
 const client = new Client({
 	intents: [
@@ -45,7 +51,7 @@ client.once(Events.ClientReady, async (readyClient) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-	if (message.author.id !== "620547628857425920") return;
+	if (message.author.id !== OWNER_ID) return;
 	if (message.content !== "!send") return;
 
 	const row = generateButtons();
