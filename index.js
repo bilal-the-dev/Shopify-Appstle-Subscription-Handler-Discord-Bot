@@ -60,6 +60,17 @@ client.on(Events.MessageCreate, async (message) => {
 		components: [row],
 	});
 });
+
+client.on(Events.InteractionCreate, async (interaction) => {
+	if (!interaction.isButton()) return;
+
+	if (interaction.customId !== "link") return;
+	await handleInteractionReply(interaction, {
+		content: `Trete unserer Community bei! https://www.dreamtrades.de`,
+		ephemeral: true,
+	});
+});
+
 client.on(Events.InteractionCreate, async (interaction) => {
 	if (!interaction.isButton()) return;
 
@@ -103,9 +114,9 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
 		if (!contract)
 			throw new Error(
-				`„Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
+				`Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
 					SUPPORT_CHANNEL_ID
-				)}"`
+				)} Channel"`
 			);
 		const isEmailUsed = await verifyEmail.findOne({
 			email,
@@ -116,7 +127,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 			throw new Error(
 				`Mail bereits mit einem Discord-Account verknüpft, kontaktiere bitte den Support im ${channelMention(
 					SUPPORT_CHANNEL_ID
-				)}`
+				)} Channel`
 			);
 
 		await member.roles.add(SUBSCRIPTION_ROLE_ID);
@@ -149,12 +160,14 @@ const generateButtons = () => {
 	const verify = new ButtonBuilder()
 		.setCustomId("verify")
 		.setLabel("Verifizieren")
-		.setStyle(ButtonStyle.Danger);
+		.setStyle(ButtonStyle.Primary)
 
+		.setEmoji("🚀");
 	const link = new ButtonBuilder()
 		.setLabel("Jetzt dazugehören")
-		.setStyle(ButtonStyle.Link)
-		.setURL("https://www.dreamtrades.de");
+		.setStyle(ButtonStyle.Secondary)
+		.setCustomId("link")
+		.setEmoji("🌏");
 
 	return new ActionRowBuilder().addComponents(verify, link);
 };

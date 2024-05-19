@@ -14,9 +14,9 @@ const fetchCustomer = async (email) => {
 
 	if (!user)
 		throw new Error(
-			`„Kein Abonnement für ${email} gefunden, kontaktiere bitte den Support im ${channelMention(
+			`Kein Abonnement für ${email} gefunden, kontaktiere bitte den Support im ${channelMention(
 				SUPPORT_CHANNEL_ID
-			)}“`
+			)} Channel“`
 		);
 
 	return user;
