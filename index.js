@@ -47,7 +47,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  cron.schedule("*/10 * * * *", checkForSubscriptions);
+  cron.schedule("0 0 * * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
