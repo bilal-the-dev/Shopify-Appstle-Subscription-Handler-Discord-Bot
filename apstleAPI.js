@@ -8,6 +8,8 @@ const fetchCustomer = async (email) => {
   );
 
   const data = await res.json();
+  console.log(res);
+
   console.log(data);
 
   const user = data.find((item) => item.email === email);
