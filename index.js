@@ -186,6 +186,8 @@ async function checkForSubscriptions() {
 
       const user = await fetchCustomer(email).catch(() => null);
 
+      console.log(user);
+
       let response;
 
       if (user)
