@@ -58,6 +58,8 @@ const fetchContracts = async (query) => {
     }
 
     if (status === "paused") {
+      console.log("paused");
+
       const pausedYear = new Date(pausedOn).getFullYear();
       const pausedMonth = new Date(pausedOn).getMonth();
       const activatedDay = new Date(activatedOn).getDate();

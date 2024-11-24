@@ -47,7 +47,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  // cron.schedule("0 0 */2 * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -196,10 +196,12 @@ async function checkForSubscriptions() {
           () => null
         );
 
+      console.log(response);
+
       if (!response || !user) {
         if (!checkForRoles(member)) continue;
-        console.log(`Removed roles for ${member.user.username}`);
         await removeRoles(member);
+        console.log(`Removed roles for ${member.user.username}`);
         continue;
       }
 
@@ -209,9 +211,9 @@ async function checkForSubscriptions() {
 
       // if (hasNoSubscription) {
       if (checkForRoles(member)) continue;
-      console.log(`Added roles for ${member.user.username}`);
 
       await addRoles(member);
+      console.log(`Added roles for ${member.user.username}`);
       // }
 
       // if (!hasNoSubscription) {
