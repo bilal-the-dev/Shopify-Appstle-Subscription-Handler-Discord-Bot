@@ -172,7 +172,7 @@ const generateButtons = () => {
   return new ActionRowBuilder().addComponents(verify, link);
 };
 
-checkForSubscriptions()
+// checkForSubscriptions()
 async function checkForSubscriptions() {
   const docs = await verifyEmail.find().catch((e) => console.log(e));
   console.log("running every minute");

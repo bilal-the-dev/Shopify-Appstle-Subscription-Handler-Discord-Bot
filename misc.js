@@ -9,5 +9,5 @@ const removeRoles = async (member) =>
   ]);
 
 const checkForRoles = (member) => member.roles.cache.has(SUBSCRIPTION_ROLE_ID);
-
+//
 module.exports = { addRoles, removeRoles, checkForRoles };
