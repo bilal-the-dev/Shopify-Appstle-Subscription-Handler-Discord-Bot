@@ -4,13 +4,14 @@ const { APPSTLE_API_KEY, PRODUCT_URL, SUPPORT_CHANNEL_ID } = process.env;
 
 const fetchCustomer = async (email) => {
   const res = await fetch(
-    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/customers?api_key=${APPSTLE_API_KEY}&email=${email}`
+    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/customers?email=${email}`,
+    { headers: { "x-api-key": "NnN6WAbTMhfh3fCNL1vP8MD4OZndpBcS" } }
   );
 
+  // console.log(res);
   const data = await res.json();
-  console.log(res);
 
-  console.log(data);
+  // console.log(data);
 
   const user = data.find((item) => item.email === email);
 
@@ -26,15 +27,18 @@ const fetchCustomer = async (email) => {
 
 const fetchContracts = async (query) => {
   const res = await fetch(
-    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/?api_key=${APPSTLE_API_KEY}&${query}`
+    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/?${query}`,
+    { headers: { "x-api-key": "NnN6WAbTMhfh3fCNL1vP8MD4OZndpBcS" } }
   );
+
   const data = await res.json();
+  // console.log(data);
 
   const contracts = data.filter((item) =>
     item.contractDetailsJSON.includes(PRODUCT_URL)
   );
 
-  console.log(contracts);
+  console.log(contracts.length);
 
   const curDate = new Date();
 

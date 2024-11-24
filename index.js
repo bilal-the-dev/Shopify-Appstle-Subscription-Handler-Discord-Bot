@@ -47,7 +47,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  // cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  cron.schedule("0 0 */2 * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -172,6 +172,7 @@ const generateButtons = () => {
   return new ActionRowBuilder().addComponents(verify, link);
 };
 
+checkForSubscriptions()
 async function checkForSubscriptions() {
   const docs = await verifyEmail.find().catch((e) => console.log(e));
   console.log("running every minute");
