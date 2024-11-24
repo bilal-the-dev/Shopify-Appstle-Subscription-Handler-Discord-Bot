@@ -169,7 +169,7 @@ const generateButtons = () => {
     .setCustomId("link")
     .setEmoji("🌏");
 
-  return new ActionRowBuilder().addComponents(verify, link);
+  return new ActionRowBuilder().addComponents(verify);
 };
 
 // checkForSubscriptions()
