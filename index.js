@@ -51,8 +51,12 @@ client.once(Events.ClientReady, async (readyClient) => {
 });
 
 client.on(Events.MessageCreate, async (message) => {
-  if (message.author.id !== OWNER_ID) return;
   if (message.content !== "!send") return;
+  console.log("Message was !send");
+
+  if (message.author.id !== OWNER_ID) return;
+
+  console.log("Sending panel");
 
   const row = generateButtons();
   await message.channel.send({
