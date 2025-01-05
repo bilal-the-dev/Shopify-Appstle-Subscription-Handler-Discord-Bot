@@ -9,6 +9,7 @@ const {
   TextInputBuilder,
   ActionRowBuilder,
   channelMention,
+  EmbedBuilder,
 } = require("discord.js");
 const mongoose = require("mongoose");
 const dotenv = require("dotenv");
@@ -28,6 +29,7 @@ const {
   MONGO_URI,
   SUPPORT_CHANNEL_ID,
   OWNER_ID,
+  LOGS_CHANNEL_ID,
 } = process.env;
 
 const client = new Client({
@@ -47,7 +49,8 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  // cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  // cron.schedule("* * * * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -110,18 +113,6 @@ client.on(Events.InteractionCreate, async (interaction) => {
     await interaction.deferReply({ ephemeral: true });
 
     const email = fields.get("email").value;
-
-    console.log(email);
-    const user = await fetchCustomer(email);
-
-    const contract = await fetchContracts(`customerName=${user.name}`);
-
-    if (!contract)
-      throw new Error(
-        `Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
-          SUPPORT_CHANNEL_ID
-        )} Channel"`
-      );
     const isEmailUsed = await verifyEmail.findOne({
       email,
       userId: { $ne: userId },
@@ -133,6 +124,20 @@ client.on(Events.InteractionCreate, async (interaction) => {
           SUPPORT_CHANNEL_ID
         )} Channel`
       );
+
+    console.log(email);
+    await fetchCustomer(email);
+
+    const { subscriptionFinished } = await fetchContracts(
+      `customerName=${email}`
+    );
+
+    // if (subscriptionFinished)
+    //   throw new Error(
+    //     `Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
+    //       SUPPORT_CHANNEL_ID
+    //     )} Channel"`
+    //   );
 
     await member.roles.add(SUBSCRIPTION_ROLE_ID);
 
@@ -176,8 +181,11 @@ const generateButtons = () => {
   return new ActionRowBuilder().addComponents(verify);
 };
 
-// checkForSubscriptions()
+checkForSubscriptions();
+
 async function checkForSubscriptions() {
+  const channel = client.channels.cache.get(LOGS_CHANNEL_ID);
+
   const docs = await verifyEmail.find().catch((e) => console.log(e));
   console.log("running every minute");
 
@@ -189,45 +197,64 @@ async function checkForSubscriptions() {
 
       if (!member) continue;
 
-      const user = await fetchCustomer(email).catch(() => null);
+      const response = await fetchContracts(`customerName=${email}`);
 
-      console.log(user);
-
-      let response;
-
-      if (user)
-        response = await fetchContracts(`customerName=${user.name}`).catch(
-          () => null
-        );
-
+      const { contract, subscriptionFinished, finishedAt } = response;
       console.log(response);
 
-      if (!response || !user) {
+      let color;
+
+      const fields = [
+        {
+          name: "Order No",
+          value: `${contract.orderName}`,
+        },
+        { name: "User", value: `${member} (${member.id})` },
+        { name: "Status", value: contract.status.toUpperCase() },
+
+        { name: "Email", value: email },
+        { name: "Sub finished", value: subscriptionFinished ? "Yes" : "No" },
+      ];
+
+      if (subscriptionFinished) {
         if (!checkForRoles(member)) continue;
+
         await removeRoles(member);
+
         console.log(`Removed roles for ${member.user.username}`);
-        continue;
+
+        fields.push({
+          name: "Finished At",
+          value: `<t:${Math.floor(finishedAt / 1000)}:f>`,
+        });
+
+        color = 0xffa500;
       }
 
-      // const hasNoSubscription =
-      //   response.status != "active" &&
-      //   new Date(response.nextBillingDate) < new Date();
+      if (!subscriptionFinished) {
+        if (checkForRoles(member)) continue;
 
-      // if (hasNoSubscription) {
-      if (checkForRoles(member)) continue;
+        await addRoles(member);
+        color = 0x00ff00;
+      }
 
-      await addRoles(member);
-      console.log(`Added roles for ${member.user.username}`);
-      // }
+      const embed = new EmbedBuilder()
+        .setFields(fields)
+        .setColor(color)
+        .setThumbnail(member.displayAvatarURL());
 
-      // if (!hasNoSubscription) {
-      //   if (member.roles.cache.has(SUBSCRIPTION_ROLE_ID)) continue;
-      //   console.log(`Added roles for ${member.user.username}`);
-
-      //   await addRoles(member);
-      // }
+      await channel?.send({ embeds: [embed] });
     } catch (error) {
       console.log(error);
+
+      const errorEmbed = {
+        color: 0xff0000,
+        title: "Error Processing User",
+        description: `**User:** <@${doc.userId}>\n\n\`\`\`yaml\n${error.message}\n\`\`\``,
+        timestamp: new Date(),
+      };
+
+      await channel?.send({ embeds: [errorEmbed] }).catch(console.error);
     }
   }
 }

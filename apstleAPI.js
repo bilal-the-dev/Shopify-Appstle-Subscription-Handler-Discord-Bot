@@ -1,11 +1,11 @@
 const { channelMention } = require("discord.js");
 
-const { APPSTLE_API_KEY, PRODUCT_URL, SUPPORT_CHANNEL_ID } = process.env;
+const { APPSTLE_API_KEY, TARGET_PRODUCT_ID, SUPPORT_CHANNEL_ID } = process.env;
 
 const fetchCustomer = async (email) => {
   const res = await fetch(
     `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/customers?email=${email}`,
-    { headers: { "x-api-key": "NnN6WAbTMhfh3fCNL1vP8MD4OZndpBcS" } }
+    { headers: { "x-api-key": APPSTLE_API_KEY } }
   );
 
   // console.log(res);
@@ -27,60 +27,63 @@ const fetchCustomer = async (email) => {
 
 const fetchContracts = async (query) => {
   const res = await fetch(
-    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/?${query}`,
-    { headers: { "x-api-key": "NnN6WAbTMhfh3fCNL1vP8MD4OZndpBcS" } }
+    `https://subscription-admin.appstle.com/api/external/v2/subscription-contract-details/?${query}&productId=${TARGET_PRODUCT_ID}`,
+    { headers: { "x-api-key": APPSTLE_API_KEY } }
   );
 
-  const data = await res.json();
-  // console.log(data);
+  const contracts = await res.json();
 
-  const contracts = data.filter((item) =>
-    item.contractDetailsJSON.includes(PRODUCT_URL)
-  );
+  if (!Array.isArray(contracts)) throw new Error(JSON.stringify(contracts));
 
-  console.log(contracts.length);
+  const response = { subscriptionFinished: true };
 
-  const curDate = new Date();
+  console.log(contracts);
+
+  const curTime = new Date().getTime();
 
   for (const contract of contracts) {
-    const { status, nextBillingDate, activatedOn, pausedOn } = contract;
+    response.contract = contract;
+    const { status, nextBillingDate, lastSuccessfulOrder } = contract;
 
-    if (status === "active") return contract;
+    const nextPaymentTime = new Date(nextBillingDate).getTime();
+
+    let subscriptionFinished = true;
+    if (status === "active") subscriptionFinished = false;
 
     console.log("not active");
 
     if (status === "cancelled") {
-      if (new Date(nextBillingDate) < curDate) continue;
+      if (curTime > nextPaymentTime) {
+        response.finishedAt = nextPaymentTime;
+        continue;
+      }
 
       console.log("cancelled but active");
 
-      return contract;
+      subscriptionFinished = false;
     }
 
     if (status === "paused") {
       console.log("paused");
 
-      const pausedYear = new Date(pausedOn).getFullYear();
-      const pausedMonth = new Date(pausedOn).getMonth();
-      const activatedDay = new Date(activatedOn).getDate();
-      const activatedMonth = new Date(activatedOn).getMonth();
+      const parsedJSON = JSON.parse(lastSuccessfulOrder);
 
-      if (curDate.getFullYear() !== pausedYear) continue;
+      const lastPaymentDate = new Date(parsedJSON.orderDate);
 
-      if (
-        activatedMonth === pausedMonth &&
-        activatedMonth === curDate.getMonth()
-      )
-        return contract;
+      lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 1);
 
-      if (
-        pausedMonth === curDate.getMonth() ||
-        pausedMonth === curDate.getMonth() - 1
-      ) {
-        if (curDate.getDate() <= activatedDay + 1) return contract;
+      if (curTime > lastPaymentDate.getTime()) {
+        response.finishedAt = lastPaymentDate.getTime();
+        continue;
       }
+
+      subscriptionFinished = false;
     }
+
+    if (!subscriptionFinished) return { subscriptionFinished, contract };
   }
+
+  return response;
 };
 
 module.exports = { fetchCustomer, fetchContracts };
