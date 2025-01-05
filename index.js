@@ -50,6 +50,8 @@ client.once(Events.ClientReady, async (readyClient) => {
     .catch((e) => console.log("Error connecting to database" + e));
 
   cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  checkForSubscriptions();
+
   // cron.schedule("* * * * *", checkForSubscriptions);
 });
 
@@ -132,12 +134,12 @@ client.on(Events.InteractionCreate, async (interaction) => {
       `customerName=${email}`
     );
 
-    // if (subscriptionFinished)
-    //   throw new Error(
-    //     `Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
-    //       SUPPORT_CHANNEL_ID
-    //     )} Channel"`
-    //   );
+    if (subscriptionFinished)
+      throw new Error(
+        `Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
+          SUPPORT_CHANNEL_ID
+        )} Channel"`
+      );
 
     await member.roles.add(SUBSCRIPTION_ROLE_ID);
 
@@ -180,8 +182,6 @@ const generateButtons = () => {
 
   return new ActionRowBuilder().addComponents(verify);
 };
-
-checkForSubscriptions();
 
 async function checkForSubscriptions() {
   const channel = client.channels.cache.get(LOGS_CHANNEL_ID);
