@@ -1,6 +1,4 @@
-const { channelMention } = require("discord.js");
-
-const { APPSTLE_API_KEY, TARGET_PRODUCT_ID, SUPPORT_CHANNEL_ID } = process.env;
+const { APPSTLE_API_KEY, TARGET_PRODUCT_ID } = process.env;
 
 const fetchCustomer = async (email) => {
   const res = await fetch(
@@ -8,18 +6,13 @@ const fetchCustomer = async (email) => {
     { headers: { "x-api-key": APPSTLE_API_KEY } }
   );
 
-  // console.log(res);
   const data = await parseResponse(res);
-
-  // console.log(data);
 
   const user = data.find((item) => item.email === email);
 
   if (!user)
     throw new Error(
-      `Kein Abonnement für ${email} gefunden, kontaktiere bitte den Support im ${channelMention(
-        SUPPORT_CHANNEL_ID
-      )} Channel“`
+      `No subscription found for ${email}, please contact support`
     );
 
   return user;
@@ -48,22 +41,16 @@ const fetchContracts = async (query) => {
     let subscriptionFinished = true;
     if (status === "active") subscriptionFinished = false;
 
-    console.log("not active");
-
     if (status === "cancelled") {
       if (curTime > nextPaymentTime) {
         response.finishedAt = nextPaymentTime;
         continue;
       }
 
-      console.log("cancelled but active");
-
       subscriptionFinished = false;
     }
 
     if (status === "paused") {
-      console.log("paused");
-
       const parsedJSON = JSON.parse(lastSuccessfulOrder);
 
       const lastPaymentDate = new Date(parsedJSON.orderDate);

@@ -7,4 +7,4 @@ const emailSchema = new Schema({
   email: reqStr,
 });
 
-module.exports = model("verifyEmail", emailSchema);
+module.exports = model("giraffe_emails", emailSchema);

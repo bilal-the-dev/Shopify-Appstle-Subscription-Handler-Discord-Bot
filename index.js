@@ -8,7 +8,6 @@ const {
   TextInputStyle,
   TextInputBuilder,
   ActionRowBuilder,
-  channelMention,
   EmbedBuilder,
 } = require("discord.js");
 const mongoose = require("mongoose");
@@ -27,7 +26,6 @@ const {
   GUILD_ID,
   SUBSCRIPTION_ROLE_ID,
   MONGO_URI,
-  SUPPORT_CHANNEL_ID,
   OWNER_ID,
   LOGS_CHANNEL_ID,
 } = process.env;
@@ -49,10 +47,10 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  cron.schedule("0 0 */2 * *", checkForSubscriptions);
-  // checkForSubscriptions();
+  // cron.schedule("0 0 */2 * *", checkForSubscriptions);
+  checkForSubscriptions();
 
-  // cron.schedule("* * * * *", checkForSubscriptions);
+  cron.schedule("* * * * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -65,18 +63,8 @@ client.on(Events.MessageCreate, async (message) => {
 
   const row = generateButtons();
   await message.channel.send({
-    content: "Aktiviere dein Abo!",
+    content: "Activate your subscription!",
     components: [row],
-  });
-});
-
-client.on(Events.InteractionCreate, async (interaction) => {
-  if (!interaction.isButton()) return;
-
-  if (interaction.customId !== "link") return;
-  await handleInteractionReply(interaction, {
-    content: `Trete unserer Community bei! https://www.dreamtrades.de`,
-    ephemeral: true,
   });
 });
 
@@ -89,7 +77,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
   const email = new TextInputBuilder()
     .setCustomId("email")
-    .setLabel("Deine E-Mail")
+    .setLabel("E-Mail")
     .setStyle(TextInputStyle.Short);
 
   const firstActionRow = new ActionRowBuilder().addComponents(email);
@@ -122,9 +110,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (isEmailUsed)
       throw new Error(
-        `Mail bereits mit einem Discord-Account verknüpft, kontaktiere bitte den Support im ${channelMention(
-          SUPPORT_CHANNEL_ID
-        )} Channel`
+        `Mail already linked to a Discord account, please contact support`
       );
 
     console.log(email);
@@ -136,9 +122,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
 
     if (subscriptionFinished)
       throw new Error(
-        `Das Abonnement für ${email} ist abgelaufen, kontaktiere bitte den Support im ${channelMention(
-          SUPPORT_CHANNEL_ID
-        )} Channel"`
+        `Subscription to ${email} has expired, please contact support`
       );
 
     await member.roles.add(SUBSCRIPTION_ROLE_ID);
@@ -154,7 +138,7 @@ client.on(Events.InteractionCreate, async (interaction) => {
       });
 
     await handleInteractionReply(interaction, {
-      content: `Abonnement für ${email} erfolgreich aktiviert`,
+      content: `Subscription successfully activated for ${email}`,
     });
   } catch (error) {
     console.log(error);
@@ -170,15 +154,10 @@ client.login(TOKEN);
 const generateButtons = () => {
   const verify = new ButtonBuilder()
     .setCustomId("verify")
-    .setLabel("Verifizieren")
+    .setLabel("Verify")
     .setStyle(ButtonStyle.Primary)
 
     .setEmoji("🚀");
-  const link = new ButtonBuilder()
-    .setLabel("Jetzt dazugehören")
-    .setStyle(ButtonStyle.Secondary)
-    .setCustomId("link")
-    .setEmoji("🌏");
 
   return new ActionRowBuilder().addComponents(verify);
 };
