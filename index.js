@@ -17,18 +17,11 @@ const cron = require("node-cron");
 dotenv.config({ path: ".env" });
 
 const verifyEmail = require("./models/verifyEmail");
-const { fetchCustomer, fetchContracts } = require("./apstleAPI");
-const { addRoles, checkForRoles, removeRoles } = require("./misc");
+const { fetchContracts } = require("./apstleAPI");
+const { addRole, checkForRole, removeRole } = require("./misc");
 const { handleInteractionReply } = require("./handlnteraction");
 //
-const {
-  TOKEN,
-  GUILD_ID,
-  SUBSCRIPTION_ROLE_ID,
-  MONGO_URI,
-  OWNER_ID,
-  LOGS_CHANNEL_ID,
-} = process.env;
+const { TOKEN, GUILD_ID, MONGO_URI, OWNER_ID, LOGS_CHANNEL_ID } = process.env;
 
 const client = new Client({
   intents: [
@@ -48,9 +41,9 @@ client.once(Events.ClientReady, async (readyClient) => {
     .catch((e) => console.log("Error connecting to database" + e));
 
   // cron.schedule("0 0 */2 * *", checkForSubscriptions);
-  checkForSubscriptions();
+  // checkForSubscriptions();
 
-  cron.schedule("* * * * *", checkForSubscriptions);
+  cron.schedule("*/2 * * * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -114,27 +107,30 @@ client.on(Events.InteractionCreate, async (interaction) => {
       );
 
     console.log(email);
-    await fetchCustomer(email);
+    // no need to make two api requests probably
+    // await fetchCustomer(email);
 
-    const { subscriptionFinished } = await fetchContracts(
+    const { subscriptionFinished, contract } = await fetchContracts(
       `customerName=${email}`
     );
 
     if (subscriptionFinished)
       throw new Error(
-        `Subscription to ${email} has expired, please contact support`
+        `You do not seem have to any active subscription. In case you do, please contact support`
       );
 
-    await member.roles.add(SUBSCRIPTION_ROLE_ID);
+    const variantId = await addRole(member, contract);
 
     const hasAlreadyRegistered = await verifyEmail.findOne({ userId });
 
-    if (hasAlreadyRegistered) await hasAlreadyRegistered.updateOne({ email });
+    if (hasAlreadyRegistered)
+      await hasAlreadyRegistered.updateOne({ email, variantId });
 
     if (!hasAlreadyRegistered)
       await verifyEmail.create({
         email,
         userId,
+        variantId,
       });
 
     await handleInteractionReply(interaction, {
@@ -170,7 +166,7 @@ async function checkForSubscriptions() {
 
   for (const doc of docs) {
     try {
-      const { userId, email } = doc;
+      const { userId, email, variantId } = doc;
       const guild = client.guilds.cache.get(GUILD_ID);
       const member = await guild.members.fetch(userId).catch(() => null);
 
@@ -179,7 +175,7 @@ async function checkForSubscriptions() {
       const response = await fetchContracts(`customerName=${email}`);
 
       const { contract, subscriptionFinished, finishedAt } = response;
-      console.log(response);
+      // console.log(response);
 
       let color;
 
@@ -201,9 +197,9 @@ async function checkForSubscriptions() {
       ];
 
       if (subscriptionFinished) {
-        if (!checkForRoles(member)) continue;
+        if (!checkForRole(member, contract ?? variantId)) continue;
 
-        await removeRoles(member);
+        await removeRole(member, contract ?? variantId);
 
         console.log(`Removed roles for ${member.user.username}`);
 
@@ -216,9 +212,14 @@ async function checkForSubscriptions() {
       }
 
       if (!subscriptionFinished) {
-        if (checkForRoles(member)) continue;
+        if (checkForRole(member, contract)) continue;
 
-        await addRoles(member);
+        const newVariantId = await addRole(member, contract);
+
+        console.log(newVariantId);
+
+        if (newVariantId !== variantId)
+          await doc.updateOne({ variantId: newVariantId });
         color = 0x00ff00;
       }
 
