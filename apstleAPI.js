@@ -89,16 +89,15 @@ async function parseResponse(res) {
   if (res.headers.get("content-type").includes("json"))
     parsedRes = await res.json();
   if (res.headers.get("content-type").includes("html")) {
+    console.log(res);
+
     parsedRes = (await res.text()).slice(0, 1700);
+    console.log(parsedRes);
+    throw new Error("Something went wrong, please try again");
   }
 
   if (!res.ok) {
-    console.log(res);
-    console.log(parsedRes);
-
-    throw new Error(
-      typeof parsedRes === "string" ? parsedRes : JSON.stringify(parsedRes)
-    );
+    throw new Error(JSON.stringify(parsedRes));
   }
 
   return parsedRes;
