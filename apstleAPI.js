@@ -9,7 +9,7 @@ const fetchCustomer = async (email) => {
   );
 
   // console.log(res);
-  const data = await res.json();
+  const data = await parseResponse(res);
 
   // console.log(data);
 
@@ -31,9 +31,7 @@ const fetchContracts = async (query) => {
     { headers: { "x-api-key": APPSTLE_API_KEY } }
   );
 
-  const contracts = await res.json();
-
-  if (!Array.isArray(contracts)) throw new Error(JSON.stringify(contracts));
+  const contracts = await parseResponse(res);
 
   const response = { subscriptionFinished: true };
 
@@ -86,4 +84,23 @@ const fetchContracts = async (query) => {
   return response;
 };
 
+async function parseResponse(res) {
+  let parsedRes;
+  if (res.headers.get("content-type").includes("json"))
+    parsedRes = await res.json();
+  if (res.headers.get("content-type").includes("html")) {
+    parsedRes = (await res.text()).slice(0, 1700);
+  }
+
+  if (!res.ok) {
+    console.log(res);
+    console.log(parsedRes);
+
+    throw new Error(
+      typeof parsedRes === "string" ? parsedRes : JSON.stringify(parsedRes)
+    );
+  }
+
+  return parsedRes;
+}
 module.exports = { fetchCustomer, fetchContracts };

@@ -50,7 +50,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     .catch((e) => console.log("Error connecting to database" + e));
 
   cron.schedule("0 0 */2 * *", checkForSubscriptions);
-  checkForSubscriptions();
+  // checkForSubscriptions();
 
   // cron.schedule("* * * * *", checkForSubscriptions);
 });
@@ -207,10 +207,15 @@ async function checkForSubscriptions() {
       const fields = [
         {
           name: "Order No",
-          value: `${contract.orderName}`,
+          value: `${contract?.orderName ?? "#0000"}`,
         },
         { name: "User", value: `${member} (${member.id})` },
-        { name: "Status", value: contract.status.toUpperCase() },
+        {
+          name: "Status",
+          value:
+            contract?.status?.toUpperCase() ??
+            "No subscription active currently",
+        },
 
         { name: "Email", value: email },
         { name: "Sub finished", value: subscriptionFinished ? "Yes" : "No" },
@@ -225,7 +230,7 @@ async function checkForSubscriptions() {
 
         fields.push({
           name: "Finished At",
-          value: `<t:${Math.floor(finishedAt / 1000)}:f>`,
+          value: `<t:${Math.floor((finishedAt ?? Date.now()) / 1000)}:f>`,
         });
 
         color = 0xffa500;
