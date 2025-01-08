@@ -34,7 +34,12 @@ const fetchContracts = async (query) => {
 
   for (const contract of contracts) {
     response.contract = contract;
-    const { status, nextBillingDate, lastSuccessfulOrder } = contract;
+    const {
+      status,
+      nextBillingDate,
+      lastSuccessfulOrder,
+      billingPolicyIntervalCount,
+    } = contract;
 
     const nextPaymentTime = new Date(nextBillingDate).getTime();
 
@@ -55,7 +60,9 @@ const fetchContracts = async (query) => {
 
       const lastPaymentDate = new Date(parsedJSON.orderDate);
 
-      lastPaymentDate.setMonth(lastPaymentDate.getMonth() + 1);
+      lastPaymentDate.setMonth(
+        lastPaymentDate.getMonth() + billingPolicyIntervalCount
+      );
 
       if (curTime > lastPaymentDate.getTime()) {
         response.finishedAt = lastPaymentDate.getTime();

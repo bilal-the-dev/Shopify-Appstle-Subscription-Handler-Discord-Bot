@@ -40,10 +40,8 @@ client.once(Events.ClientReady, async (readyClient) => {
     .then(() => console.log("Connected to db 🧨"))
     .catch((e) => console.log("Error connecting to database" + e));
 
-  // cron.schedule("0 0 */2 * *", checkForSubscriptions);
-  // checkForSubscriptions();
-
-  cron.schedule("*/2 * * * *", checkForSubscriptions);
+  checkForSubscriptions();
+  cron.schedule("0 0 */2 * *", checkForSubscriptions);
 });
 
 client.on(Events.MessageCreate, async (message) => {
@@ -199,7 +197,7 @@ async function checkForSubscriptions() {
       if (subscriptionFinished) {
         if (!checkForRole(member, contract ?? variantId)) continue;
 
-        await removeRole(member, contract ?? variantId);
+        await removeRole(member);
 
         console.log(`Removed roles for ${member.user.username}`);
 

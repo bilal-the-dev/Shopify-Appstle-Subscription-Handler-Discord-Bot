@@ -8,10 +8,13 @@ const addRole = async (member, contract) => {
   return parseVariantId(contract);
 };
 
-const removeRole = async (member, contract) => {
-  const { roleId } = getVariantConfig(contract);
+const removeRole = async (member) => {
+  const variantRoles = variantsRoleMap.map((o) => o.roleId);
+  const newRoles = [...member.roles.cache.keys()].filter(
+    (r) => !variantRoles.includes(r)
+  );
 
-  return member.roles.remove(roleId);
+  return member.roles.set(newRoles);
 };
 
 const checkForRole = (member, contract) => {
@@ -37,7 +40,6 @@ const getVariantConfig = (contractOrVariantId) => {
     throw new Error(
       "Something went wrong - Could not find role for the said variant"
     );
-  console.log(variant);
 
   return variant;
 };
